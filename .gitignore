@@ -1,0 +1,5 @@
+.idea/
+out/
+bin/
+wsuv-junit-runner.iml
+.DS_Store
