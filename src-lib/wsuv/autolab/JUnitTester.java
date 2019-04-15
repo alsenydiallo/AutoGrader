@@ -22,8 +22,8 @@ public class JUnitTester extends JUnitCore {
         } finally {
             /*
             System.out.println("Failures:");
-            for(Failure ansi_formatter : result.getFailures()) {
-                System.out.println(ansi_formatter.getDescription() + ": " + ansi_formatter.getMessage());
+            for(Failure formatter : result.getFailures()) {
+                System.out.println(formatter.getDescription() + ": " + formatter.getMessage());
             }
             System.out.println("-------");
             */

@@ -9,5 +9,5 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface Category {
     String DEFAULT = "Correctness";
-    String name() default DEFAULT;
+    String value() default DEFAULT;
 }

@@ -1,0 +1,5 @@
+# The WSUV Java Template #
+
+This project is a minimal example of the template in use.
+
+

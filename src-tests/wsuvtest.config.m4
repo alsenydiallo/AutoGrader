@@ -1,0 +1,2 @@
+total=SCORE_MAX_CORRECTNESS__
+style=plain

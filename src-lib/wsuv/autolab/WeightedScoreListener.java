@@ -8,7 +8,6 @@ import org.junit.runner.notification.RunListener;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -34,8 +33,7 @@ public class WeightedScoreListener extends RunListener {
 
     private double maxScore;// The maximum amount of point a student can obtain from the entire project
 
-    PrintStream out = new PrintStream(System.out);
-    ANSI_Formatter ansi_formatter = new ANSI_Formatter(out);
+    Formatter formatter;
 
     public WeightedScoreListener(String configFile) {
         classScores = new HashMap<>(100);
@@ -66,6 +64,7 @@ public class WeightedScoreListener extends RunListener {
 
     private void readJsonConfigFile(String configFile){
         try{
+            System.err.println("Opening config file: " + configFile);
             InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(configFile);
             Reader reader = new InputStreamReader(Objects.requireNonNull(inputStream));
 
@@ -74,7 +73,18 @@ public class WeightedScoreListener extends RunListener {
             JsonObject jsonObject = element.getAsJsonObject();
 
             this.debug = !(jsonObject.get("debug").getAsInt() == 0);
-            this.style = jsonObject.get("style").getAsString();
+            String nm = "RawFormatter";
+            if (jsonObject.get("formatter") != null) {
+                nm = jsonObject.get("formatter").getAsString();
+            }
+
+            try {
+                Class cls = Class.forName("wsuv.autolab." + nm);
+                this.formatter = (Formatter) cls.getDeclaredConstructor().newInstance();
+            } catch (Exception ie) {
+                System.err.println(ie);
+                throw new IllegalArgumentException("Couldn't set the formatter to '" + nm + "'");
+            }
 
             JsonObject categories = jsonObject.get("scores").getAsJsonObject();
             for (String category : categories.keySet()) {
@@ -92,10 +102,11 @@ public class WeightedScoreListener extends RunListener {
     }
 
     /**
-     *   This method scans the test file
+     *   This method scans the test files
      *   It adds to the variable @categoriesTestScores and @testsFailedOrIgnored each scanned method
      *   in the form [testclassname, [Method name -> score value]]
-     *
+     *   Throws an exception if the method category isn't declared in the config file
+     *   Also, throws an exception if class contains an annotation
      */
     public void testStarted(Description description) {
         // if we don't already know the class score, try to obtain it, or mark it as NAN
@@ -110,18 +121,21 @@ public class WeightedScoreListener extends RunListener {
             failedOrIgnoredTest.put(testclass, new HashMap<>(30));
         }
 
-        // look for the test/method score
+        // look for the test/method score and category annotation
         String testName = description.getMethodName();
         Category category = description.getAnnotation(Category.class);
-        if(category != null && categoriesMaxScore.containsKey(category.name())){
-            String name = category.name();
+        if(category != null && categoriesMaxScore.containsKey(category.value())){
+            String name = category.value();
 
             assignMethodToCategoryHashMap(description, testclass, testName, name);
-        }else {
+        }else if(category == null){
             String name = Category.DEFAULT;
             assignMethodToCategoryHashMap(description, testclass, testName, name);
+        }else{
+            // this happens if the category annotated for the method isn't declared at the project config file
+            throw new TestScoringException("Illegal Annotation, Category not declared in project config file");
         }
-        ansi_formatter.printHeader(description);
+        formatter.testStarted(description);
     }
 
     private void assignMethodToCategoryHashMap(Description description, String testclass, String testName, String name) {
@@ -140,8 +154,7 @@ public class WeightedScoreListener extends RunListener {
 
     public void testRunStarted(Description description) throws Exception {
         testCount = description.testCount();
-        ansi_formatter.printString("Number of tests to execute: " + testCount);
-        ansi_formatter.printBanner();
+        formatter.testRunStarted("Number of tests to execute: " + testCount);
     }
 
 
@@ -149,8 +162,6 @@ public class WeightedScoreListener extends RunListener {
         // if a test was run that had no score annotation, we need to compute some scores...
         if (implicitMethodScores) computeMissingScores();
 
-        ansi_formatter.printBanner();
-        ansi_formatter.printString("Points possible: " + maxScore);
         double pointsObtained = maxScore;
 
         // subtract points for failed/ignored tests
@@ -158,7 +169,7 @@ public class WeightedScoreListener extends RunListener {
             for (Entry<String, Description> test : failedOrIgnoredTest.get(cls).entrySet()) {
                 Description description = test.getValue();
                 if((description.getAnnotation(Category.class) != null)){
-                    String name = description.getAnnotation(Category.class).name();
+                    String name = description.getAnnotation(Category.class).value();
                     pointsObtained = updatePointsObtained(pointsObtained, cls, test, description, name);
                 }else{
                     String name = Category.DEFAULT;
@@ -166,14 +177,23 @@ public class WeightedScoreListener extends RunListener {
                 }
             }
         }
-        if(debug) ansi_formatter.printScoreTable(categoriesTestScores);
-        ansi_formatter.printStat(result, pointObtainedByCategory, categoriesMaxScore);
+        formatter.testRunFinished("");
+        if(debug) formatter.printScoreTable(categoriesTestScores);
+
+        int testsCount = result.getRunCount();
+        int testsPassed = testsCount - result.getFailureCount() - result.getIgnoreCount();
+        int teststIgnored = result.getIgnoreCount();
+        int testsFailed = result.getFailureCount();
+
+
+        formatter.printResults(testsCount, testsPassed, testsFailed, teststIgnored,
+                        pointsObtained, maxScore, pointObtainedByCategory);
     }
 
     private double updatePointsObtained(double pointsObtained, String cls, Entry<String, Description> test, Description description, String name) {
         Double point = categoriesTestScores.get(cls).get(name).get(description.getMethodName());
         if (debug) {
-            ansi_formatter.printString(" -- Subtracting " + point + " for " + cls + "." + test);
+            formatter.printString(" -- Subtracting " + point + " for " + cls + "." + test);
         }
         pointsObtained -= point;
         pointObtainedByCategory.replace(name, pointObtainedByCategory.get(name) - point);
@@ -310,24 +330,24 @@ public class WeightedScoreListener extends RunListener {
 
 
     public void testFinished(Description description) throws Exception {
-        ansi_formatter.printFooter(description);
+        formatter.testFinished(description);
     }
 
     public void testFailure(Failure failure) throws Exception {
-        ansi_formatter.printFailedTest(failure, failedOrIgnoredTest);
+        formatter.testFailed(failure, failedOrIgnoredTest);
     }
 
     public void testAssumptionFailure(Failure failure) {
         Description testMethod = failure.getDescription();
         Class testClass = testMethod.getTestClass();
         failedOrIgnoredTest.get(testClass.getCanonicalName()).put(failure.getDescription().getMethodName(), failure.getDescription());
-        ansi_formatter.printString("Failed: " + failure.getDescription().getMethodName());
+        formatter.printString("Failed: " + failure.getDescription().getMethodName());
     }
 
     public void testIgnored(Description description) throws Exception {
         Class testClass = description.getTestClass();
         failedOrIgnoredTest.get(testClass.getCanonicalName()).put(description.getMethodName(), description);
-        ansi_formatter.printString("Ignored: " + description.getMethodName());
+        formatter.printString("Ignored: " + description.getMethodName());
     }
 
 

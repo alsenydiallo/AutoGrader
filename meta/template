@@ -1,0 +1,20 @@
+NAME WSUVJRunnerTemplate 
+VERSION 1.0
+SHA eb4bf89ae484d09af4f19f749b031b5f67993068
+
+
+meta/macros                 	template
+src-tests/files.map         	template
+writeup/README.mkd          	template
+LAB_NAME__.rb.m4            	static      	876dd23651834b3ce863f488002783e0ac9f333c
+LAB_NAME__.yml.m4           	static      	e065a44560c611b6feb934ca98121f1d6971cb57
+Makefile.m4                 	static      	2a8ce8889b27afe61ead0c7ffaa27dbd5da41503
+autograde-Makefile.m4       	static      	37ed29cb36418d3e2607b12a19373650dc315cc9
+src/Makefile                	static      	295a83ff7ea68c6b93e3ad96330595f6ce1f1986
+src/Makefile-handout        	static      	3d00a0188e651fdfc8ebe9ae4b4e32d48fae2af3
+src/Makefile-submission     	static      	4e028d62244ab8ec3e018279c3c1aa98a9ece004
+src/README-handout          	static      	2313e935f9667d9e68973d941e5534bfbf643004
+src/driver.sh-handout       	static      	38ff813df7ea738763d7feb1fc3bae5ed746a2af
+src/map-files.py            	static      	01948378c33ea8399f0110356be1c7a5ccd9effe
+src/skeletonify.py          	static      	8aefe946da14a586179df9fa57db05030f064bf0
+src-tests/wsuvtest.config.m4	static      	d6260e087cedd7a93ea1fa43a5a43c453d23f8c0
