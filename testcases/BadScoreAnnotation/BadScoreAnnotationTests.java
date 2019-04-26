@@ -7,13 +7,11 @@ import static org.junit.Assert.assertTrue;
 
 
 /**
- * Case 8: Bad score annotation. negative score value for category
+ * Case 8: Bad score annotation. negative score value for category should not be allowed
  * This test should fail.
- * Auto grader should throw an exception @exception("Illegal score annotation, Negative score value for method")
+ * Auto grader should throw an exception @exception("Illegal Score annotation value. Method cannot have negative score value")
  *
  *
- * current behavior: Behavior is silent for higher score than config file. Total grad is auto balanced
- *                  (due to auto grader only been aware of the method score after it fails)
  */
 
 public class BadScoreAnnotationTests {

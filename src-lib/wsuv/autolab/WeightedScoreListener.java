@@ -126,7 +126,6 @@ public class WeightedScoreListener extends RunListener {
         Category category = description.getAnnotation(Category.class);
         if(category != null && categoriesMaxScore.containsKey(category.value())){
             String name = category.value();
-
             assignMethodToCategoryHashMap(description, testclass, testName, name);
         }else if(category == null){
             String name = Category.DEFAULT;
@@ -145,6 +144,9 @@ public class WeightedScoreListener extends RunListener {
 
         if(description.getAnnotation(Score.class) != null){
             double score = description.getAnnotation(Score.class).score();
+            if(score <= 0){
+                throw new TestScoringException("Illegal Score annotation value. Method cannot have negative score value");
+            }
             categoriesTestScores.get(testclass).get(name).put(testName, score);
         }else{
             categoriesTestScores.get(testclass).get(name).put(testName, Double.NaN);

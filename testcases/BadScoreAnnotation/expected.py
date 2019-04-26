@@ -2,7 +2,7 @@ import json
 import re
 
 def test(outputlines, outfile):
-  exception = "Illegal score annotation, Negative score value for method"
+  exception = "Illegal Score annotation value. Method cannot have negative score value"
   jsonstr = '{"Correctness": 0.0, "Extra Credit 1": 0.0, "Extra Credit 2": 0.0, "Extra Credit 3": 0.0}'
   lines = "".join(outputlines)
 
